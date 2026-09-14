@@ -1,0 +1,9 @@
+name: opensource
+description: Stack 100% open source pour agents cyber
+runtime:
+  orchestrator: local
+  model_provider: ollama
+  observability: grafana-loki
+security:
+  sandbox: true
+  approval_mode: human-in-the-loop

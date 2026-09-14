@@ -1,0 +1,47 @@
+agents:
+  - id: blue-soc-analyst
+    team: blue
+    mode: assistive
+    capabilities:
+      - alert-triage
+      - threat-hunting
+      - report-generation
+    tools:
+      - sigma
+      - suricata
+      - osquery
+
+  - id: blue-incident-responder
+    team: blue
+    mode: assistive
+    capabilities:
+      - incident-response
+      - containment-plan
+      - remediation-playbook
+    tools:
+      - wazuh
+      - thehive
+      - cortex
+
+  - id: red-operator
+    team: red
+    mode: autonomous
+    capabilities:
+      - adversary-emulation
+      - persistence-simulation
+      - lateral-movement-simulation
+    tools:
+      - metasploit
+      - caldera
+      - nmap
+
+  - id: red-planner
+    team: red
+    mode: assistive
+    capabilities:
+      - scenario-design
+      - objective-prioritization
+      - purple-team-briefing
+    tools:
+      - mitre-attack-cti
+      - atomic-red-team

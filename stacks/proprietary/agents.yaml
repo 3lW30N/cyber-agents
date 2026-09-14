@@ -1,0 +1,47 @@
+agents:
+  - id: blue-soc-analyst-enterprise
+    team: blue
+    mode: assistive
+    capabilities:
+      - alert-triage
+      - case-correlation
+      - executive-reporting
+    tools:
+      - enterprise-siem
+      - case-management
+      - intel-feed-premium
+
+  - id: blue-incident-responder-enterprise
+    team: blue
+    mode: autonomous
+    capabilities:
+      - incident-response
+      - containment-orchestration
+      - ticket-automation
+    tools:
+      - soar-platform
+      - endpoint-manager
+      - enterprise-edr
+
+  - id: red-operator-enterprise
+    team: red
+    mode: autonomous
+    capabilities:
+      - adversary-emulation
+      - breach-path-validation
+      - exploit-chain-simulation
+    tools:
+      - enterprise-bas
+      - internal-c2
+      - vuln-intelligence
+
+  - id: red-planner-enterprise
+    team: red
+    mode: assistive
+    capabilities:
+      - campaign-planning
+      - objective-mapping
+      - purple-team-exercise-design
+    tools:
+      - attack-knowledgebase
+      - governance-risk-compliance

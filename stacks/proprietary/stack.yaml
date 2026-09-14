@@ -1,0 +1,9 @@
+name: proprietary
+description: Stack propriétaire pour agents cyber
+runtime:
+  orchestrator: enterprise
+  model_provider: proprietary-llm
+  observability: enterprise-siem
+security:
+  sandbox: true
+  approval_mode: policy-gated
