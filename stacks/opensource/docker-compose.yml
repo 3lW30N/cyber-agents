@@ -1,0 +1,15 @@
+services:
+  blue-team-agent:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: oss-blue-team-agent
+    restart: unless-stopped
+    ports:
+      - "3000:8080"
+    environment:
+      - OLLAMA_BASE_URL=${OSS_LLM_ENDPOINT}
+
+  red-team-agent:
+    image: alpine:3.20
+    container_name: oss-red-team-agent
+    restart: unless-stopped
+    command: ["sh", "-c", "while true; do echo '[red-team] simulation tick'; sleep 30; done"]

@@ -1,0 +1,16 @@
+services:
+  blue-team-agent:
+    image: ghcr.io/3lw30n/proprietary-blue-agent:latest
+    container_name: proprietary-blue-team-agent
+    restart: unless-stopped
+    environment:
+      - API_URL=${PROPRIETARY_API_URL}
+      - API_TOKEN=${PROPRIETARY_API_TOKEN}
+
+  red-team-agent:
+    image: ghcr.io/3lw30n/proprietary-red-agent:latest
+    container_name: proprietary-red-team-agent
+    restart: unless-stopped
+    environment:
+      - API_URL=${PROPRIETARY_API_URL}
+      - API_TOKEN=${PROPRIETARY_API_TOKEN}

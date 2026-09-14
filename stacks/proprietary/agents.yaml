@@ -1,0 +1,20 @@
+fleet:
+  name: proprietary-cyber-fleet
+  stack: proprietary
+  agents:
+    - id: blue-command-01
+      team: blue
+      role: autonomous-defense
+      mission: orchestrer la détection et la remédiation sur stack propriétaire
+      capabilities:
+        - adaptive-detection
+        - automated-containment
+        - compliance-reporting
+    - id: red-operator-01
+      team: red
+      role: adversary-emulation
+      mission: émuler des tactiques avancées sur périmètre autorisé
+      capabilities:
+        - intrusion-simulation
+        - stealth-testing
+        - objective-based-reporting
