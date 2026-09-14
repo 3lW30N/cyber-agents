@@ -1,0 +1,20 @@
+fleet:
+  name: opensource-cyber-fleet
+  stack: opensource
+  agents:
+    - id: blue-soc-01
+      team: blue
+      role: detection-response
+      mission: surveiller les événements sécurité et prioriser les incidents
+      capabilities:
+        - triage
+        - alert-correlation
+        - incident-reporting
+    - id: red-adversary-01
+      team: red
+      role: attack-simulation
+      mission: exécuter des scénarios d’attaque contrôlés
+      capabilities:
+        - recon
+        - lateral-movement-simulation
+        - post-engagement-reporting
