@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Agents Demo — Présentation</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0e1a;
+    --panel: #111827;
+    --border: #1e293b;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --green: #22c55e;
+    --muted: #94a3b8;
+    --text: #e2e8f0;
+    --accent: #7c3aed;
+  }
+
+  html, body { height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); }
+
+  .deck { width: 100%; height: 100vh; display: flex; flex-direction: column; }
+
+  /* Slides */
+  .slides { flex: 1; overflow: hidden; position: relative; }
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    padding: 60px 80px;
+    opacity: 0; pointer-events: none; transition: opacity .35s ease;
+  }
+  .slide.active { opacity: 1; pointer-events: auto; }
+
+  /* Nav */
+  nav {
+    display: flex; align-items: center; justify-content: center; gap: 20px;
+    padding: 16px; border-top: 1px solid var(--border); background: var(--panel); shrink: 0;
+  }
+  nav button {
+    background: var(--border); border: none; color: var(--text); padding: 8px 20px;
+    border-radius: 6px; cursor: pointer; font-size: 14px; transition: background .2s;
+  }
+  nav button:hover { background: #334155; }
+  #counter { color: var(--muted); font-size: 13px; min-width: 60px; text-align: center; }
+
+  /* Progress bar */
+  #progress { height: 3px; background: var(--border); }
+  #progress-bar { height: 100%; background: linear-gradient(90deg, var(--red), var(--accent)); transition: width .35s; }
+
+  /* Typography */
+  .eyebrow { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+  h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.1; }
+  h2 { font-size: clamp(1.4rem, 3vw, 2.2rem); font-weight: 700; margin-bottom: 32px; }
+  .sub { color: var(--muted); font-size: 1.05rem; margin-top: 12px; line-height: 1.6; max-width: 700px; text-align: center; }
+
+  /* Chips */
+  .chips { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 24px; }
+  .chip {
+    padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 600;
+    letter-spacing: .05em; border: 1px solid;
+  }
+  .chip-red   { color: var(--red);   border-color: var(--red);   background: rgba(239,68,68,.1); }
+  .chip-blue  { color: var(--blue);  border-color: var(--blue);  background: rgba(59,130,246,.1); }
+  .chip-green { color: var(--green); border-color: var(--green); background: rgba(34,197,94,.1); }
+  .chip-gray  { color: var(--muted); border-color: var(--border); background: rgba(255,255,255,.04); }
+
+  /* Cards */
+  .cards { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 900px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; flex: 1; min-width: 200px; max-width: 260px;
+  }
+  .card-icon { font-size: 1.8rem; margin-bottom: 12px; }
+  .card h3 { font-size: .95rem; font-weight: 700; margin-bottom: 8px; }
+  .card p  { font-size: .82rem; color: var(--muted); line-height: 1.5; }
+
+  /* Two-col */
+  .two-col { display: flex; gap: 48px; width: 100%; max-width: 900px; align-items: flex-start; }
+  .col { flex: 1; }
+  .col h3 { font-size: 1rem; font-weight: 700; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .col ul { list-style: none; }
+  .col ul li { font-size: .85rem; color: var(--muted); padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .col ul li:last-child { border: none; }
+  .badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; letter-spacing: .05em; }
+  .badge-red  { background: rgba(239,68,68,.2);  color: var(--red); }
+  .badge-blue { background: rgba(59,130,246,.2); color: var(--blue); }
+
+  /* Kill chain */
+  .chain { display: flex; align-items: center; gap: 0; width: 100%; max-width: 860px; flex-wrap: wrap; justify-content: center; }
+  .chain-step {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px 18px; text-align: center; flex: 1; min-width: 120px;
+  }
+  .chain-step .num { font-size: 10px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
+  .chain-step .name { font-size: .85rem; font-weight: 700; margin: 4px 0; }
+  .chain-step .tid  { font-size: 10px; color: var(--red); font-family: monospace; }
+  .chain-arrow { color: var(--muted); font-size: 1.2rem; padding: 0 6px; flex-shrink: 0; }
+
+  /* Stack compare */
+  .stacks { display: flex; gap: 24px; width: 100%; max-width: 760px; }
+  .stack { flex: 1; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 28px 24px; }
+  .stack .logo { font-size: 1.5rem; margin-bottom: 10px; }
+  .stack h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+  .stack .model { font-family: monospace; font-size: .78rem; color: var(--muted); background: rgba(255,255,255,.05); padding: 4px 10px; border-radius: 4px; display: inline-block; margin-bottom: 12px; }
+  .stack ul { list-style: none; }
+  .stack ul li { font-size: .82rem; color: var(--muted); padding: 4px 0; }
+  .stack ul li::before { content: "✓ "; color: var(--green); }
+
+  /* Architecture */
+  .arch { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 760px; }
+  .arch-row { display: flex; gap: 12px; justify-content: center; }
+  .arch-box {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 20px; text-align: center; flex: 1;
+  }
+  .arch-box .label { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+  .arch-box .name  { font-size: .88rem; font-weight: 600; margin-top: 2px; }
+  .arch-divider { text-align: center; color: var(--muted); font-size: .9rem; }
+
+  /* Big stat */
+  .stats { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
+  .stat { text-align: center; }
+  .stat .number { font-size: 3.5rem; font-weight: 800; line-height: 1; }
+  .stat .label  { font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-top: 6px; }
+
+  /* Title slide gradient */
+  .slide-title h1 span.red  { color: var(--red); }
+  .slide-title h1 span.blue { color: var(--blue); }
+  .vs { color: var(--muted); font-weight: 300; }
+
+  /* Network topology */
+  .topology { font-family: monospace; font-size: .82rem; color: var(--muted); background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 24px 32px; line-height: 2; }
+  .topology .host { color: var(--text); font-weight: 600; }
+  .topology .port { color: var(--green); }
+  .topology .arrow { color: var(--accent); }
+
+  /* Footer */
+  .slide-footer { position: absolute; bottom: 24px; right: 40px; font-size: 11px; color: var(--border); letter-spacing: .05em; }
+</style>
+</head>
+<body>
+<div class="deck">
+  <div id="progress"><div id="progress-bar"></div></div>
+
+  <div class="slides">
+
+    <!-- 1. Title -->
+    <div class="slide slide-title active">
+      <div class="eyebrow">Hackathon 2026 — Cybersécurité IA</div>
+      <h1><span class="red">Red Team</span> <span class="vs">vs</span> <span class="blue">Blue Team</span></h1>
+      <h1>Cyber Agents Demo</h1>
+      <p class="sub">Une flotte d'agents LLM autonomes qui s'affrontent en temps réel sur un réseau simulé — attaque contre défense, tour par tour.</p>
+      <div class="chips" style="margin-top:32px">
+        <span class="chip chip-red">5 agents offensifs</span>
+        <span class="chip chip-blue">5 agents défensifs</span>
+        <span class="chip chip-green">Streaming SSE temps réel</span>
+        <span class="chip chip-gray">MITRE ATT&CK</span>
+      </div>
+      <div class="slide-footer">Cyber Agents Demo</div>
+    </div>
+
+    <!-- 2. Problème -->
+    <div class="slide">
+      <div class="eyebrow">Le problème</div>
+      <h2>Les exercices red/blue team coûtent cher et prennent du temps</h2>
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon">💸</div>
+          <h3>Coût élevé</h3>
+          <p>Un pentest professionnel coûte des dizaines de milliers d'euros. Inaccessible pour la formation ou la recherche.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">⏱️</div>
+          <h3>Temps long</h3>
+          <p>Des semaines de préparation, d'exécution et de debriefing pour un seul exercice.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🎓</div>
+          <h3>Manque de formation</h3>
+          <p>Les équipes défensives ont peu d'opportunités de s'entraîner contre des attaques réalistes et variées.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🔁</div>
+          <h3>Peu reproductible</h3>
+          <p>Chaque exercice est unique, difficile à rejouer ou à varier pour tester différentes configurations.</p>
+        </div>
+      </div>
+      <div class="slide-footer">Cyber Agents Demo</div>
+    </div>
+
+    <!-- 3. Solution -->
+    <div class="slide">
+      <div class="eyebrow">La solution</div>
+      <h2>Des agents LLM autonomes qui simulent l'affrontement</h2>
+      <p class="sub">10 agents IA jouent simultanément attaque et défense sur un réseau simulé réaliste. Chaque agent raisonne, décide et agit selon les techniques MITRE ATT&CK.</p>
+      <div class="chips" style="margin-top:36px">
+        <span class="chip chip-red">Reconnaissance → Exfiltration</span>
+        <span class="chip chip-blue">Monitoring → Threat Intel</span>
+        <span class="chip chip-green">100% simulé, 0 risque réel</span>
+        <span class="chip chip-gray">Configurable en temps réel</span>
+      </div>
+      <div class="stats" style="margin-top:48px">
+        <div class="stat"><div class="number" style="color:var(--red)">5</div><div class="label">Red Agents</div></div>
+        <div class="stat"><div class="number" style="color:var(--blue)">5</div><div class="label">Blue Agents</div></div>
+        <div class="stat"><div class="number" style="color:var(--green)">10</div><div class="label">MITRE TTPs</div></div>
+        <div class="stat"><div class="number" style="color:var(--accent)">∞</div><div class="label">Scénarios</div></div>
+      </div>
+      <div class="slide-footer">Cyber Agents Demo</div>
+    </div>
+
+    <!-- 4. Kill Chain -->
+    <div class="slide">
+      <div class="eyebrow">Red Team — Kill Chain</div>
+      <h2>5 étapes, 5 agents spécialisés</h2>
+      <div class="chain">
+        <div class="chain-step">
+          <div class="num">01</div>
+          <div class="name">Recon</div>
+          <div class="tid">T1590</div>
+        </div>
+        <div class="chain-arrow">→</div>
+        <div class="chain-step">
+          <div class="num">02</div>
+          <div class="name">Scanner</div>
+          <div class="tid">T1046</div>
+        </div>
+        <div class="chain-arrow">→</div>
+        <div class="chain-step">
+          <div class="num">03</div>
+          <div class="name">Exploit</div>
+          <div class="tid">T1190</div>
+        </div>
+        <div class="chain-arrow">→</div>
+        <div class="chain-step">
+          <div class="num">04</div>
+          <div class="name">Pivot</div>
+          <div class="tid">T1021</div>
+        </div>
+        <div class="chain-arrow">→</div>
+        <div class="chain-step">
+          <div class="num">05</div>
+          <div class="name">Exfil</div>
+          <div class="tid">T1041</div>
+        </div>
+      </div>
+      <p class="sub" style="margin-top:32px">PHANTOM-RECON → GHOST-SCANNER → WRAITH-EXPLOIT → SHADOW-PIVOT → SPECTRE-EXFIL</p>
+      <div class="slide-footer">Cyber Agents Demo</div>
+    </div>
+
+    <!-- 5. Blue Team -->
+    <div class="slide">
+      <div class="eyebrow">Blue Team — Défense</div>
+      <h2>5 agents réagissent en temps réel</h2>
+      <div class="two-col">
+        <div class="col">
+          <h3 style="color:var(--blue)">Agents défensifs</h3>
+          <ul>
+            <li>BlueMonitor <span class="badge badge-blue">DE.CM-1</span></li>
+            <li>BlueAnalyzer <span class="badge badge-blue">RS.AN-1</span></li>
+            <li>BlueFirewall <span class="badge badge-blue">PR.AC-5</span></li>
+            <li>BlueResponder <span class="badge badge-blue">RS.MI-1</span></li>
+            <li>BlueThreatIntel <span class="badge badge-blue">ID.RA-2</span></li>
+          </ul>
+        </div>
+        <div class="col">
+          <h3 style="color:var(--blue)">Capacités</h3>
+          <ul>
+            <li>Détection d'anomalies réseau</li>
+            <li>Corrélation d'alertes SIEM</li>
+            <li>Blocage dynamique firewall</li>
+            <li>Isolation et remédiation</li>
+            <li>Enrichissement IOC / ATT&CK</li>
+          </ul>
+        </div>
+      </div>
+      <div class="slide-footer">Cyber Agents Demo</div>
+    </div>
+
+    <!-- 6. Réseau simulé -->
+    <div class="slide">
+      <div class="eyebrow">Infrastructure simulée</div>
+      <h2>Topologie réseau réaliste</h2>
+      <div class="topology">
+        <span style="color:var(--muted)">Internet</span>
+        <span class="arrow"> ──→ </span>
+        <span class="host">[web-server]</span>
+        <span class="port"> :80 :443 :22</span>
+        <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <span class="arrow"> ──→ </span>
+        <span class="host">[db-server]</span>
+        <span class="port"> :5432 :3306</span>
+        <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <span class="arrow"> ──→ </span>
+        <span class="host">[mail-server]</span>
+        <span class="port"> :25 :587</span>
+        <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <span class="arrow"> ──→ </span>
+        <span class="host">[internal-workstation]</span>
+        <span class="port"> :445 :3389</span>
+        <br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <span class="arrow"> ──→ </span>
+        <span class="host">[domain-controller]</span>
+        <span class="port"> :389 :636</span>
+      </div>
+      <p class="sub" style="margin-top:20px">Chaque hôte a : services, CVE, patch level, statut de compromission, règles firewall</p>
+      <div class="slide-footer">Cyber Agents Demo</div>
+    </div>
+
+    <!-- 7. Deux stacks LLM -->
+    <div class="slide">
+      <div class="eyebrow">Deux stacks LLM au choix</div>
+      <h2>Propriétaire vs Open Source</h2>
+      <div class="stacks">
+        <div class="stack" style="border-color: rgba(139,92,246,.4)">
+          <div class="logo">✦</div>
+          <h3>Stack Propriétaire</h3>
+          <div class="model">gemini-3.8-flash</div>
+          <ul>
+            <li>Google Gemini (gratuit)</li>
+            <li>JSON structuré natif</li>
+            <li>Raisonnement avancé</li>
+            <li>API Google AI Studio</li>
+          </ul>
+        </div>
+        <div class="stack" style="border-color: rgba(34,197,94,.4)">
+          <div class="logo">⚡</div>
+          <h3>Stack Open Source</h3>
+          <div class="model">llama-3.3-70b-versatile</div>
+          <ul>
+            <li>Groq (inférence ultra-rapide)</li>
+            <li>Llama 3.3 70B (gratuit)</li>
+            <li>Switching en temps réel</li>
+            <li>Comparaison live des deux</li>
+          </ul>
+        </div>
+      </div>
+      <div class="slide-footer">Cyber Agents Demo</div>
+    </div>
+
+    <!-- 8. Architecture technique -->
+    <div class="slide">
+      <div class="eyebrow">Architecture technique</div>
+      <h2>Stack moderne, déployable partout</h2>
+      <div class="arch">
+        <div class="arch-row">
+          <div class="arch-box" style="border-color:rgba(59,130,246,.4); max-width:360px">
+            <div class="label">Frontend</div>
+            <div class="name">React + Vite + Tailwind CSS</div>
+          </div>
+        </div>
+        <div class="arch-divider">↕ SSE (Server-Sent Events) streaming</div>
+        <div class="arch-row">
+          <div class="arch-box" style="border-color:rgba(239,68,68,.4); max-width:360px">
+            <div class="label">Backend</div>
+            <div class="name">FastAPI (Python) + asyncio</div>
+          </div>
+        </div>
+        <div class="arch-divider">↕ API async</div>
+        <div class="arch-row">
+          <div class="arch-box" style="border-color:rgba(139,92,246,.4)">
+            <div class="label">LLM Propriétaire</div>
+            <div class="name">Google Gemini</div>
+          </div>
+          <div class="arch-box" style="border-color:rgba(34,197,94,.4)">
+            <div class="label">LLM Open Source</div>
+            <div class="name">Groq / Llama 3.3</div>
+          </div>
+        </div>
+        <div class="arch-divider">Docker Compose (dev) · Vercel + Render (prod)</div>
+      </div>
+      <div class="slide-footer">Cyber Agents Demo</div>
+    </div>
+
+    <!-- 9. Demo -->
+    <div class="slide">
+      <div class="eyebrow">Démo live</div>
+      <h2>Ce que vous allez voir</h2>
+      <div class="cards" style="max-width:820px">
+        <div class="card">
+          <div class="card-icon">🗺️</div>
+          <h3>Network Map</h3>
+          <p>Visualisation du réseau en temps réel — hôtes compromis, isolés, alertes actives.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">⚔️</div>
+          <h3>Attack Timeline</h3>
+          <p>Chaque action Red Team avec technique MITRE, cible, résultat et raisonnement LLM.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🛡️</div>
+          <h3>Defense Log</h3>
+          <p>Réponses Blue Team en temps réel — blocages, isolations, corrélations SIEM.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🧠</div>
+          <h3>Agent Thoughts</h3>
+          <p>Le raisonnement interne de chaque agent LLM — chain-of-thought visible.</p>
+        </div>
+      </div>
+      <div class="slide-footer">Cyber Agents Demo</div>
+    </div>
+
+    <!-- 10. Conclusion -->
+    <div class="slide">
+      <div class="eyebrow">Conclusion</div>
+      <h1 style="font-size:clamp(1.8rem,4vw,3rem); text-align:center">L'IA au service de la cybersécurité</h1>
+      <p class="sub" style="margin-top:24px">Des agents LLM autonomes capables de simuler des attaques et défenses réalistes, en temps réel, à coût quasi nul — un outil de formation, de recherche et de démonstration.</p>
+      <div class="chips" style="margin-top:40px">
+        <span class="chip chip-red">Red Team autonome</span>
+        <span class="chip chip-blue">Blue Team réactive</span>
+        <span class="chip chip-green">Open source</span>
+        <span class="chip chip-gray">Hackathon 2026</span>
+      </div>
+      <div style="margin-top:48px; padding:20px 32px; background:var(--panel); border:1px solid var(--border); border-radius:10px; font-family:monospace; font-size:.85rem; color:var(--muted)">
+        docker compose up → localhost:5173
+      </div>
+      <div class="slide-footer">Cyber Agents Demo</div>
+    </div>
+
+  </div><!-- .slides -->
+
+  <nav>
+    <button onclick="go(-1)">← Préc.</button>
+    <span id="counter">1 / 10</span>
+    <button onclick="go(1)">Suiv. →</button>
+  </nav>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  let cur = 0;
+  function show(n) {
+    slides[cur].classList.remove('active');
+    cur = (n + slides.length) % slides.length;
+    slides[cur].classList.add('active');
+    document.getElementById('counter').textContent = (cur+1) + ' / ' + slides.length;
+    document.getElementById('progress-bar').style.width = ((cur+1)/slides.length*100) + '%';
+  }
+  function go(d) { show(cur + d); }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') go(1);
+    if (e.key === 'ArrowLeft') go(-1);
+  });
+  show(0);
+</script>
+</body>
+</html>

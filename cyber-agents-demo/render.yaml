@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: cyber-agents-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: LLM_STACK
+        value: gemini
+      - key: ALLOWED_ORIGINS
+        value: https://your-frontend.vercel.app

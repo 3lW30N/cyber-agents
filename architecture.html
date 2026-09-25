@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Agents Demo — Architecture</title>
+<style>
+  /* ── Reset & base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:         #0a0e1a;
+    --bg-panel:   #111827;
+    --bg-card:    #1a2235;
+    --border:     #1e2d45;
+    --border-hi:  #2a4060;
+
+    --red:        #ef4444;
+    --red-dim:    #7f1d1d;
+    --red-glow:   rgba(239,68,68,.25);
+
+    --blue:       #3b82f6;
+    --blue-dim:   #1e3a5f;
+    --blue-glow:  rgba(59,130,246,.25);
+
+    --green:      #22c55e;
+    --yellow:     #eab308;
+    --orange:     #f97316;
+    --purple:     #a855f7;
+
+    --text:       #e2e8f0;
+    --text-2:     #94a3b8;
+    --text-3:     #475569;
+
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    --font-sans: 'Inter', system-ui, sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ── Typography ── */
+  h1 { font-size: clamp(1.6rem, 4vw, 2.8rem); font-weight: 800; letter-spacing: -.02em; }
+  h2 { font-size: 1.35rem; font-weight: 700; letter-spacing: -.01em; }
+  h3 { font-size: 1rem; font-weight: 600; }
+  p  { color: var(--text-2); font-size: .92rem; }
+  code { font-family: var(--font-mono); font-size: .82rem; color: var(--green); background: rgba(34,197,94,.08); padding: 1px 5px; border-radius: 3px; }
+
+  /* ── Layout ── */
+  .page { max-width: 1200px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 72px 0 48px;
+    border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .hero-eyebrow {
+    font-family: var(--font-mono);
+    font-size: .75rem;
+    color: var(--blue);
+    letter-spacing: .15em;
+    text-transform: uppercase;
+  }
+  .hero-title { line-height: 1.1; }
+  .hero-title .red  { color: var(--red); }
+  .hero-title .blue { color: var(--blue); }
+  .hero-desc { max-width: 640px; font-size: 1rem; color: var(--text-2); }
+  .hero-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--font-mono); font-size: .72rem;
+    padding: 4px 10px; border-radius: 20px;
+    border: 1px solid; font-weight: 500;
+  }
+  .badge.gemini  { color: #60a5fa; border-color: #1e3a5f; background: rgba(59,130,246,.08); }
+  .badge.groq    { color: #fb923c; border-color: #431407; background: rgba(249,115,22,.08); }
+  .badge.python  { color: #facc15; border-color: #422006; background: rgba(234,179,8,.08); }
+  .badge.react   { color: #67e8f9; border-color: #0e3a47; background: rgba(103,232,249,.08); }
+  .badge.free    { color: var(--green); border-color: #14532d; background: rgba(34,197,94,.08); }
+
+  /* ── Section titles ── */
+  .section { margin-top: 64px; }
+  .section-title {
+    font-family: var(--font-mono); font-size: .7rem;
+    color: var(--text-3); letter-spacing: .18em; text-transform: uppercase;
+    margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* ── Network diagram (SVG) ── */
+  .diagram-wrap {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    overflow-x: auto;
+  }
+  #net-svg { width: 100%; height: auto; display: block; }
+
+  /* ── Stack comparison ── */
+  .stacks-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 640px) { .stacks-grid { grid-template-columns: 1fr; } }
+
+  .stack-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stack-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    opacity: .04;
+    pointer-events: none;
+  }
+  .stack-card.red-card  { border-color: var(--red-dim); }
+  .stack-card.red-card::before  { background: var(--red); }
+  .stack-card.blue-card { border-color: var(--blue-dim); }
+  .stack-card.blue-card::before { background: var(--blue); }
+
+  .stack-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .stack-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .stack-dot.red  { background: var(--red);  box-shadow: 0 0 8px var(--red); }
+  .stack-dot.blue { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+  .stack-title { font-weight: 700; font-size: 1.05rem; }
+
+  .prop-row { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .prop-row:last-child { border-bottom: none; }
+  .prop-label { font-size: .82rem; color: var(--text-3); font-family: var(--font-mono); }
+  .prop-val   { font-size: .82rem; color: var(--text); font-weight: 500; text-align: right; }
+
+  /* ── Agents grid ── */
+  .agents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+
+  .agent-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .agent-card:hover { border-color: var(--border-hi); }
+  .agent-card.red:hover  { border-color: var(--red-dim);  box-shadow: 0 0 12px var(--red-glow); }
+  .agent-card.blue:hover { border-color: var(--blue-dim); box-shadow: 0 0 12px var(--blue-glow); }
+
+  .agent-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .agent-team-badge {
+    font-family: var(--font-mono); font-size: .65rem; font-weight: 700;
+    padding: 2px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: .08em;
+  }
+  .agent-team-badge.red  { background: rgba(239,68,68,.15); color: var(--red); }
+  .agent-team-badge.blue { background: rgba(59,130,246,.15); color: var(--blue); }
+
+  .agent-name { font-weight: 700; font-size: .9rem; }
+  .agent-desc { font-size: .8rem; color: var(--text-2); margin-bottom: 10px; line-height: 1.4; }
+  .agent-mitre {
+    display: flex; flex-wrap: wrap; gap: 4px;
+  }
+  .mitre-tag {
+    font-family: var(--font-mono); font-size: .65rem;
+    color: var(--text-3); background: rgba(255,255,255,.04);
+    border: 1px solid var(--border); border-radius: 3px;
+    padding: 1px 5px;
+  }
+
+  /* ── Flow diagram ── */
+  .flow-wrap {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    overflow-x: auto;
+  }
+
+  /* ── Tech stack table ── */
+  .tech-table { width: 100%; border-collapse: collapse; }
+  .tech-table th {
+    text-align: left; font-family: var(--font-mono); font-size: .7rem;
+    color: var(--text-3); text-transform: uppercase; letter-spacing: .1em;
+    padding: 8px 12px; border-bottom: 1px solid var(--border);
+  }
+  .tech-table td {
+    padding: 10px 12px; border-bottom: 1px solid rgba(30,45,69,.5);
+    font-size: .85rem; vertical-align: top;
+  }
+  .tech-table tr:last-child td { border-bottom: none; }
+  .tech-table td:first-child { color: var(--text-2); font-weight: 500; }
+  .tech-table td:nth-child(2) { font-family: var(--font-mono); color: var(--green); font-size: .8rem; }
+  .tech-table td:nth-child(3) { color: var(--text-3); font-size: .8rem; }
+
+  .tech-section { margin-bottom: 8px; }
+  .tech-section-head {
+    font-family: var(--font-mono); font-size: .65rem; color: var(--text-3);
+    text-transform: uppercase; letter-spacing: .12em;
+    padding: 10px 12px 4px; background: rgba(255,255,255,.02);
+  }
+
+  /* ── SSE events ── */
+  .events-grid { display: flex; flex-direction: column; gap: 8px; }
+  .event-row {
+    display: grid; grid-template-columns: 160px 1fr;
+    gap: 12px; align-items: start;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 16px;
+    font-family: var(--font-mono); font-size: .78rem;
+  }
+  .event-name { font-weight: 700; }
+  .event-name.red    { color: var(--red); }
+  .event-name.blue   { color: var(--blue); }
+  .event-name.gray   { color: var(--text-3); }
+  .event-name.green  { color: var(--green); }
+  .event-name.orange { color: var(--orange); }
+  .event-desc { color: var(--text-2); font-family: var(--font-sans); font-size: .82rem; line-height: 1.4; }
+
+  /* ── Deploy section ── */
+  .deploy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px) { .deploy-grid { grid-template-columns: 1fr; } }
+
+  .deploy-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px;
+  }
+  .deploy-title { font-size: .95rem; font-weight: 700; margin-bottom: 4px; }
+  .deploy-sub   { font-size: .78rem; color: var(--text-3); font-family: var(--font-mono); margin-bottom: 14px; }
+  .deploy-step {
+    display: flex; gap: 10px; margin-bottom: 8px; align-items: flex-start;
+  }
+  .step-num {
+    width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .65rem; font-weight: 800; font-family: var(--font-mono);
+    background: var(--border-hi); color: var(--text-2);
+  }
+  .step-text { font-size: .82rem; color: var(--text-2); line-height: 1.4; }
+
+  /* ── File tree ── */
+  .file-tree {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px 24px;
+    font-family: var(--font-mono); font-size: .78rem;
+    line-height: 1.8; color: var(--text-2);
+  }
+  .file-tree .dir  { color: var(--blue); }
+  .file-tree .file { color: var(--text-2); }
+  .file-tree .comm { color: var(--text-3); font-style: italic; }
+  .file-tree .hl   { color: var(--yellow); }
+
+  /* ── Win conditions ── */
+  .win-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 560px) { .win-grid { grid-template-columns: 1fr; } }
+
+  .win-card {
+    border-radius: 10px; padding: 20px;
+    border: 1px solid;
+  }
+  .win-card.red  { background: rgba(239,68,68,.05); border-color: var(--red-dim); }
+  .win-card.blue { background: rgba(59,130,246,.05); border-color: var(--blue-dim); }
+  .win-title { font-weight: 700; font-size: 1rem; margin-bottom: 10px; }
+  .win-card.red  .win-title { color: var(--red); }
+  .win-card.blue .win-title { color: var(--blue); }
+  .win-list { list-style: none; }
+  .win-list li { font-size: .85rem; color: var(--text-2); padding: 4px 0; display: flex; gap: 8px; }
+  .win-list li::before { content: '→'; color: var(--text-3); flex-shrink: 0; }
+
+  /* ── Animations ── */
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+  .pulse { animation: pulse 2s infinite; }
+  @keyframes scan { 0% { opacity:.3; transform: scaleX(.7); } 50% { opacity:1; transform: scaleX(1); } 100% { opacity:.3; transform: scaleX(.7); } }
+
+  /* ── Print / export ── */
+  @media print {
+    body { background: #fff; color: #111; }
+    .hero, .section { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ═══════════════════════════════════════════════
+       HERO
+  ═══════════════════════════════════════════════ -->
+  <header class="hero">
+    <div class="hero-eyebrow">Hackathon 2026 · Cybersécurité IA</div>
+    <h1 class="hero-title">
+      <span class="red">Red Team</span> vs <span class="blue">Blue Team</span><br>
+      Cyber Agents Demo
+    </h1>
+    <p class="hero-desc">
+      Flotte de 10 agents LLM autonomes simulant une intrusion réseau en temps réel.
+      Red Team attaque, Blue Team défend — sur deux stacks LLM paramétrables depuis une interface web.
+    </p>
+    <div class="hero-badges">
+      <span class="badge gemini">Gemini 2.5 Flash</span>
+      <span class="badge groq">Groq / Llama 3.1</span>
+      <span class="badge python">FastAPI · Python</span>
+      <span class="badge react">React · D3.js</span>
+      <span class="badge free">100% gratuit en démo</span>
+    </div>
+  </header>
+
+
+  <!-- ═══════════════════════════════════════════════
+       RÉSEAU SIMULÉ
+  ═══════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-title">Topologie réseau simulée</div>
+    <div class="diagram-wrap">
+      <svg id="net-svg" viewBox="0 0 900 340" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#2a4060"/>
+          </marker>
+          <marker id="arr-red" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/>
+          </marker>
+          <filter id="glow-red">
+            <feGaussianBlur stdDeviation="4" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="glow-blue">
+            <feGaussianBlur stdDeviation="4" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- Internet cloud -->
+        <ellipse cx="80" cy="170" rx="60" ry="40" fill="none" stroke="#1e2d45" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <text x="80" y="165" text-anchor="middle" font-size="11" fill="#475569" font-family="monospace">INTERNET</text>
+        <text x="80" y="178" text-anchor="middle" font-size="10" fill="#374151" font-family="monospace">Red Team</text>
+        <!-- Arrow from internet -->
+        <line x1="141" y1="170" x2="195" y2="170" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arr-red)" stroke-dasharray="6 3">
+          <animate attributeName="stroke-dashoffset" from="0" to="-18" dur="1.2s" repeatCount="indefinite"/>
+        </line>
+
+        <!-- Web Server -->
+        <rect x="200" y="135" width="120" height="70" rx="8" fill="#1a2235" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="260" y="158" text-anchor="middle" font-size="11" font-weight="700" fill="#60a5fa" font-family="monospace">web-server</text>
+        <text x="260" y="173" text-anchor="middle" font-size="9.5" fill="#475569" font-family="monospace">10.0.0.10</text>
+        <text x="260" y="186" text-anchor="middle" font-size="9" fill="#374151" font-family="monospace">:80 :443 :22</text>
+        <rect x="220" y="195" width="80" height="10" rx="3" fill="rgba(234,179,8,.12)" stroke="#854d0e" stroke-width=".8"/>
+        <text x="260" y="203" text-anchor="middle" font-size="8" fill="#ca8a04" font-family="monospace">patch: outdated</text>
+
+        <!-- Edges from web-server -->
+        <line x1="320" y1="155" x2="390" y2="100" stroke="#1e2d45" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="320" y1="165" x2="390" y2="165" stroke="#1e2d45" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="320" y1="180" x2="390" y2="230" stroke="#1e2d45" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- DB Server -->
+        <rect x="395" y="65" width="120" height="70" rx="8" fill="#1a2235" stroke="#1e2d45" stroke-width="1.5"/>
+        <text x="455" y="88" text-anchor="middle" font-size="11" font-weight="700" fill="#e2e8f0" font-family="monospace">db-server</text>
+        <text x="455" y="103" text-anchor="middle" font-size="9.5" fill="#475569" font-family="monospace">10.0.0.20</text>
+        <text x="455" y="116" text-anchor="middle" font-size="9" fill="#374151" font-family="monospace">:5432 :3306</text>
+        <rect x="415" y="125" width="80" height="10" rx="3" fill="rgba(34,197,94,.08)" stroke="#14532d" stroke-width=".8"/>
+        <text x="455" y="133" text-anchor="middle" font-size="8" fill="#16a34a" font-family="monospace">patch: current</text>
+
+        <!-- Mail Server -->
+        <rect x="395" y="135" width="120" height="70" rx="8" fill="#1a2235" stroke="#1e2d45" stroke-width="1.5"/>
+        <text x="455" y="158" text-anchor="middle" font-size="11" font-weight="700" fill="#e2e8f0" font-family="monospace">mail-server</text>
+        <text x="455" y="173" text-anchor="middle" font-size="9.5" fill="#475569" font-family="monospace">10.0.0.30</text>
+        <text x="455" y="186" text-anchor="middle" font-size="9" fill="#374151" font-family="monospace">:25 :587 :993</text>
+        <rect x="415" y="196" width="80" height="10" rx="3" fill="rgba(234,179,8,.12)" stroke="#854d0e" stroke-width=".8"/>
+        <text x="455" y="204" text-anchor="middle" font-size="8" fill="#ca8a04" font-family="monospace">patch: outdated</text>
+
+        <!-- Workstation -->
+        <rect x="395" y="210" width="120" height="70" rx="8" fill="#1a2235" stroke="#991b1b" stroke-width="1.5"/>
+        <text x="455" y="233" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fca5a5" font-family="monospace">workstation</text>
+        <text x="455" y="247" text-anchor="middle" font-size="9.5" fill="#475569" font-family="monospace">10.0.0.40</text>
+        <text x="455" y="260" text-anchor="middle" font-size="9" fill="#374151" font-family="monospace">:445 :3389</text>
+        <rect x="415" y="269" width="80" height="10" rx="3" fill="rgba(239,68,68,.15)" stroke="#7f1d1d" stroke-width=".8"/>
+        <text x="455" y="277" text-anchor="middle" font-size="8" fill="#ef4444" font-family="monospace">MS17-010 !</text>
+
+        <!-- Edge workstation → DC -->
+        <line x1="515" y1="255" x2="580" y2="210" stroke="#1e2d45" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Domain Controller — objective -->
+        <rect x="585" y="150" width="140" height="90" rx="8" fill="#1a2235" stroke="#7c3aed" stroke-width="2"/>
+        <!-- crown icon top-right -->
+        <text x="715" y="170" font-size="14" fill="#a855f7">♛</text>
+        <text x="655" y="178" text-anchor="middle" font-size="11" font-weight="700" fill="#c4b5fd" font-family="monospace">domain-ctrl</text>
+        <text x="655" y="193" text-anchor="middle" font-size="9.5" fill="#475569" font-family="monospace">10.0.0.100</text>
+        <text x="655" y="207" text-anchor="middle" font-size="9" fill="#374151" font-family="monospace">:88 :389 :636</text>
+        <text x="655" y="220" text-anchor="middle" font-size="8.5" fill="#c4b5fd" font-family="monospace">Active Directory</text>
+        <rect x="605" y="228" width="100" height="12" rx="3" fill="rgba(168,85,247,.12)" stroke="#4c1d95" stroke-width=".8"/>
+        <text x="655" y="238" text-anchor="middle" font-size="8" fill="#a855f7" font-family="monospace">🎯 OBJECTIF RED</text>
+
+        <!-- Legend -->
+        <rect x="30" y="270" width="840" height="1" fill="#1e2d45"/>
+        <circle cx="55" cy="300" r="5" fill="#22c55e"/>
+        <text x="65" y="304" font-size="9.5" fill="#475569" font-family="monospace">Clean</text>
+        <circle cx="115" cy="300" r="5" fill="#eab308"/>
+        <text x="125" y="304" font-size="9.5" fill="#475569" font-family="monospace">Scanned</text>
+        <circle cx="190" cy="300" r="5" fill="#f97316"/>
+        <text x="200" y="304" font-size="9.5" fill="#475569" font-family="monospace">Foothold</text>
+        <circle cx="265" cy="300" r="5" fill="#ef4444"/>
+        <text x="275" y="304" font-size="9.5" fill="#475569" font-family="monospace">Owned</text>
+        <circle cx="325" cy="300" r="5" fill="#6b7280"/>
+        <text x="335" y="304" font-size="9.5" fill="#475569" font-family="monospace">Isolated</text>
+
+        <line x1="430" y1="300" x2="460" y2="300" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <text x="468" y="304" font-size="9.5" fill="#ef4444" font-family="monospace">Attack path</text>
+        <line x1="560" y1="300" x2="590" y2="300" stroke="#1e2d45" stroke-width="1.5"/>
+        <text x="598" y="304" font-size="9.5" fill="#475569" font-family="monospace">Network link</text>
+        <text x="715" y="304" font-size="9.5" fill="#a855f7" font-family="monospace">♛ Red objective</text>
+      </svg>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       DEUX STACKS
+  ═══════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-title">Deux stacks LLM comparées</div>
+    <div class="stacks-grid">
+
+      <div class="stack-card red-card">
+        <div class="stack-header">
+          <div class="stack-dot red pulse"></div>
+          <div class="stack-title">Stack "Propriétaire"</div>
+        </div>
+        <div class="prop-row"><span class="prop-label">Provider</span><span class="prop-val">Google Gemini</span></div>
+        <div class="prop-row"><span class="prop-label">Modèle</span><span class="prop-val">gemini-2.5-flash</span></div>
+        <div class="prop-row"><span class="prop-label">Output structuré</span><span class="prop-val">response_mime_type JSON</span></div>
+        <div class="prop-row"><span class="prop-label">Coût démo</span><span class="prop-val" style="color:var(--green)">Gratuit (free tier)</span></div>
+        <div class="prop-row"><span class="prop-label">SDK</span><span class="prop-val"><code>google-generativeai</code></span></div>
+        <div class="prop-row"><span class="prop-label">Clé API</span><span class="prop-val">aistudio.google.com</span></div>
+        <div class="prop-row"><span class="prop-label">Latence typique</span><span class="prop-val">1–3 s / appel</span></div>
+      </div>
+
+      <div class="stack-card blue-card">
+        <div class="stack-header">
+          <div class="stack-dot blue pulse"></div>
+          <div class="stack-title">Stack "Open Source"</div>
+        </div>
+        <div class="prop-row"><span class="prop-label">Provider</span><span class="prop-val">Groq (cloud)</span></div>
+        <div class="prop-row"><span class="prop-label">Modèle</span><span class="prop-val">llama-3.1-8b-instant</span></div>
+        <div class="prop-row"><span class="prop-label">Output structuré</span><span class="prop-val">response_format JSON</span></div>
+        <div class="prop-row"><span class="prop-label">Coût démo</span><span class="prop-val" style="color:var(--green)">Gratuit (free tier)</span></div>
+        <div class="prop-row"><span class="prop-label">SDK</span><span class="prop-val"><code>groq</code></span></div>
+        <div class="prop-row"><span class="prop-label">Clé API</span><span class="prop-val">console.groq.com</span></div>
+        <div class="prop-row"><span class="prop-label">Latence typique</span><span class="prop-val">&lt; 1 s / appel</span></div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       AGENTS
+  ═══════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-title">Flotte d'agents — 10 agents LLM</div>
+    <div class="agents-grid">
+
+      <!-- RED -->
+      <div class="agent-card red">
+        <div class="agent-header">
+          <span class="agent-team-badge red">Red</span>
+          <span class="agent-name">Recon Agent</span>
+        </div>
+        <p class="agent-desc">Reconnaissance passive — OSINT, DNS enumeration, cartographie de la surface d'attaque externe.</p>
+        <div class="agent-mitre">
+          <span class="mitre-tag">T1590</span>
+          <span class="mitre-tag">T1589</span>
+          <span class="mitre-tag">T1598</span>
+        </div>
+      </div>
+
+      <div class="agent-card red">
+        <div class="agent-header">
+          <span class="agent-team-badge red">Red</span>
+          <span class="agent-name">Scanner Agent</span>
+        </div>
+        <p class="agent-desc">Scan actif — fingerprinting de services, détection de versions vulnérables, intensité pilotée par le slider "Aggression".</p>
+        <div class="agent-mitre">
+          <span class="mitre-tag">T1046</span>
+          <span class="mitre-tag">T1595</span>
+          <span class="mitre-tag">T1592</span>
+        </div>
+      </div>
+
+      <div class="agent-card red">
+        <div class="agent-header">
+          <span class="agent-team-badge red">Red</span>
+          <span class="agent-name">Exploit Agent</span>
+        </div>
+        <p class="agent-desc">Exploitation de vulnérabilités identifiées. Sélectionne et exécute l'exploit optimal pour obtenir un foothold.</p>
+        <div class="agent-mitre">
+          <span class="mitre-tag">T1190</span>
+          <span class="mitre-tag">T1203</span>
+          <span class="mitre-tag">T1068</span>
+        </div>
+      </div>
+
+      <div class="agent-card red">
+        <div class="agent-header">
+          <span class="agent-team-badge red">Red</span>
+          <span class="agent-name">Pivot Agent</span>
+        </div>
+        <p class="agent-desc">Mouvement latéral depuis un hôte compromis. Exploite les relations de confiance pour atteindre le Domain Controller.</p>
+        <div class="agent-mitre">
+          <span class="mitre-tag">T1021</span>
+          <span class="mitre-tag">T1563</span>
+          <span class="mitre-tag">T1550</span>
+        </div>
+      </div>
+
+      <div class="agent-card red">
+        <div class="agent-header">
+          <span class="agent-team-badge red">Red</span>
+          <span class="agent-name">Exfil Agent</span>
+        </div>
+        <p class="agent-desc">Exfiltration de données depuis le DC compromis — base Active Directory, credentials, données sensibles.</p>
+        <div class="agent-mitre">
+          <span class="mitre-tag">T1041</span>
+          <span class="mitre-tag">T1048</span>
+          <span class="mitre-tag">T1567</span>
+        </div>
+      </div>
+
+      <!-- BLUE -->
+      <div class="agent-card blue">
+        <div class="agent-header">
+          <span class="agent-team-badge blue">Blue</span>
+          <span class="agent-name">Monitor Agent</span>
+        </div>
+        <p class="agent-desc">Surveillance du trafic réseau, détection d'anomalies. Niveau d'alerte piloté par le slider "Sensitivity".</p>
+        <div class="agent-mitre">
+          <span class="mitre-tag">DE.CM-1</span>
+          <span class="mitre-tag">DE.CM-7</span>
+          <span class="mitre-tag">DE.AE-3</span>
+        </div>
+      </div>
+
+      <div class="agent-card blue">
+        <div class="agent-header">
+          <span class="agent-team-badge blue">Blue</span>
+          <span class="agent-name">Analyzer Agent</span>
+        </div>
+        <p class="agent-desc">Corrélation des alertes, identification des patterns d'attaque, évaluation de la phase kill chain en cours.</p>
+        <div class="agent-mitre">
+          <span class="mitre-tag">DE.AE-2</span>
+          <span class="mitre-tag">DE.AE-5</span>
+          <span class="mitre-tag">RS.AN-1</span>
+        </div>
+      </div>
+
+      <div class="agent-card blue">
+        <div class="agent-header">
+          <span class="agent-team-badge blue">Blue</span>
+          <span class="agent-name">Firewall Agent</span>
+        </div>
+        <p class="agent-desc">Génération dynamique de règles de blocage en réponse aux menaces détectées. Bloque les techniques actives.</p>
+        <div class="agent-mitre">
+          <span class="mitre-tag">PR.AC-5</span>
+          <span class="mitre-tag">PR.PT-3</span>
+          <span class="mitre-tag">DE.CM-7</span>
+        </div>
+      </div>
+
+      <div class="agent-card blue">
+        <div class="agent-header">
+          <span class="agent-team-badge blue">Blue</span>
+          <span class="agent-name">Responder Agent</span>
+        </div>
+        <p class="agent-desc">Réponse à incident — isolation des hôtes compromis, patches d'urgence, confinement de la brèche.</p>
+        <div class="agent-mitre">
+          <span class="mitre-tag">RS.RP-1</span>
+          <span class="mitre-tag">RS.MI-1</span>
+          <span class="mitre-tag">RS.MI-3</span>
+        </div>
+      </div>
+
+      <div class="agent-card blue">
+        <div class="agent-header">
+          <span class="agent-team-badge blue">Blue</span>
+          <span class="agent-name">ThreatIntel Agent</span>
+        </div>
+        <p class="agent-desc">Enrichissement des IOCs, profilage des attaquants, mise à jour des signatures de détection en temps réel.</p>
+        <div class="agent-mitre">
+          <span class="mitre-tag">ID.RA-3</span>
+          <span class="mitre-tag">DE.AE-2</span>
+          <span class="mitre-tag">PR.IP-8</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       TURN FLOW
+  ═══════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-title">Déroulement d'un tour de simulation</div>
+    <div class="flow-wrap">
+      <svg viewBox="0 0 860 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+        <!-- boxes -->
+        <!-- 1 -->
+        <rect x="10" y="30" width="130" height="60" rx="7" fill="#1a2235" stroke="#475569" stroke-width="1.2"/>
+        <text x="75" y="56" text-anchor="middle" font-size="9.5" font-weight="700" fill="#94a3b8" font-family="monospace">Game Engine</text>
+        <text x="75" y="70" text-anchor="middle" font-size="9" fill="#475569" font-family="monospace">sélectionne agent</text>
+        <text x="75" y="83" text-anchor="middle" font-size="9" fill="#475569" font-family="monospace">Red actif</text>
+
+        <!-- arrow -->
+        <line x1="140" y1="60" x2="165" y2="60" stroke="#374151" stroke-width="1.5" marker-end="url(#arr2)"/>
+        <defs>
+          <marker id="arr2" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#374151"/>
+          </marker>
+          <marker id="arr3" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#991b1b"/>
+          </marker>
+          <marker id="arr4" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#1e3a5f"/>
+          </marker>
+          <marker id="arr5" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#374151"/>
+          </marker>
+        </defs>
+
+        <!-- 2 Red agent -->
+        <rect x="168" y="20" width="130" height="80" rx="7" fill="#1a2235" stroke="#991b1b" stroke-width="1.5"/>
+        <text x="233" y="46" text-anchor="middle" font-size="9.5" font-weight="700" fill="#fca5a5" font-family="monospace">Red Agent</text>
+        <text x="233" y="60" text-anchor="middle" font-size="9" fill="#ef4444" font-family="monospace">prompt → LLM</text>
+        <text x="233" y="74" text-anchor="middle" font-size="8.5" fill="#475569" font-family="monospace">raisonnement +</text>
+        <text x="233" y="86" text-anchor="middle" font-size="8.5" fill="#475569" font-family="monospace">action JSON</text>
+
+        <line x1="298" y1="60" x2="323" y2="60" stroke="#991b1b" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+        <!-- 3 NetworkState -->
+        <rect x="326" y="25" width="130" height="70" rx="7" fill="#1a2235" stroke="#374151" stroke-width="1.2"/>
+        <text x="391" y="50" text-anchor="middle" font-size="9.5" font-weight="700" fill="#94a3b8" font-family="monospace">Network State</text>
+        <text x="391" y="64" text-anchor="middle" font-size="9" fill="#475569" font-family="monospace">mutation hosts</text>
+        <text x="391" y="78" text-anchor="middle" font-size="9" fill="#475569" font-family="monospace">+ add_alert()</text>
+
+        <line x1="456" y1="60" x2="481" y2="60" stroke="#374151" stroke-width="1.5" marker-end="url(#arr5)"/>
+
+        <!-- 4 Blue agents -->
+        <rect x="484" y="20" width="130" height="80" rx="7" fill="#1a2235" stroke="#1e3a5f" stroke-width="1.5"/>
+        <text x="549" y="46" text-anchor="middle" font-size="9.5" font-weight="700" fill="#93c5fd" font-family="monospace">Blue Agents</text>
+        <text x="549" y="60" text-anchor="middle" font-size="9" fill="#3b82f6" font-family="monospace">2–5 agents</text>
+        <text x="549" y="74" text-anchor="middle" font-size="8.5" fill="#475569" font-family="monospace">réponse JSON</text>
+        <text x="549" y="86" text-anchor="middle" font-size="8.5" fill="#475569" font-family="monospace">rules + blocks</text>
+
+        <line x1="614" y1="60" x2="639" y2="60" stroke="#1e3a5f" stroke-width="1.5" marker-end="url(#arr4)"/>
+
+        <!-- 5 SSE -->
+        <rect x="642" y="25" width="100" height="70" rx="7" fill="#1a2235" stroke="#374151" stroke-width="1.2"/>
+        <text x="692" y="50" text-anchor="middle" font-size="9.5" font-weight="700" fill="#94a3b8" font-family="monospace">SSE Stream</text>
+        <text x="692" y="64" text-anchor="middle" font-size="9" fill="#475569" font-family="monospace">→ Frontend</text>
+        <text x="692" y="78" text-anchor="middle" font-size="9" fill="#22c55e" font-family="monospace">live events</text>
+
+        <line x1="742" y1="60" x2="767" y2="60" stroke="#374151" stroke-width="1.5" marker-end="url(#arr5)"/>
+
+        <!-- 6 Wait -->
+        <rect x="770" y="30" width="80" height="60" rx="7" fill="#1a2235" stroke="#374151" stroke-width="1.2"/>
+        <text x="810" y="55" text-anchor="middle" font-size="9.5" font-weight="700" fill="#94a3b8" font-family="monospace">Sleep</text>
+        <text x="810" y="68" text-anchor="middle" font-size="9" fill="#475569" font-family="monospace">1–5 s</text>
+        <text x="810" y="81" text-anchor="middle" font-size="8.5" fill="#475569" font-family="monospace">(configurable)</text>
+
+        <!-- loop back arrow -->
+        <path d="M810,30 Q810,10 391,10 Q140,10 75,30" stroke="#1e2d45" stroke-width="1" fill="none" stroke-dasharray="5 3"/>
+        <text x="440" y="8" text-anchor="middle" font-size="8" fill="#374151" font-family="monospace">→ prochain tour →</text>
+      </svg>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       SSE EVENTS
+  ═══════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-title">Schéma des événements SSE</div>
+    <div class="events-grid">
+      <div class="event-row">
+        <span class="event-name red">red_action</span>
+        <span class="event-desc">Action d'un agent Red — technique MITRE, cible, raisonnement LLM complet, résultat (success/blocked/detected), confidence</span>
+      </div>
+      <div class="event-row">
+        <span class="event-name blue">blue_response</span>
+        <span class="event-desc">Réponse d'un agent Blue — alerte générée, techniques détectées, règles appliquées, recommended_response</span>
+      </div>
+      <div class="event-row">
+        <span class="event-name orange">alert</span>
+        <span class="event-desc">Bannière d'alerte haute sévérité (CRITICAL/HIGH) dérivée des détections Blue — affichée prominemment dans l'UI</span>
+      </div>
+      <div class="event-row">
+        <span class="event-name gray">state_update</span>
+        <span class="event-desc">Snapshot complet du réseau après chaque tour — état de tous les hôtes, scores Red/Blue, numéro de tour</span>
+      </div>
+      <div class="event-row">
+        <span class="event-name green">game_over</span>
+        <span class="event-desc">Fin de simulation — winner (red/blue), reason, final_scores, récapitulatif complet de la partie</span>
+      </div>
+      <div class="event-row">
+        <span class="event-name gray">heartbeat</span>
+        <span class="event-desc">Keepalive SSE toutes les 15 s — maintient la connexion ouverte pendant les phases de réflexion des agents</span>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       WIN CONDITIONS
+  ═══════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-title">Conditions de victoire</div>
+    <div class="win-grid">
+      <div class="win-card red">
+        <div class="win-title">Red Team gagne si…</div>
+        <ul class="win-list">
+          <li>Le <code>domain-controller</code> passe au status <code>owned</code></li>
+          <li>Chemin : web-server → workstation → DC</li>
+          <li>Exfiltration de données AD réussie</li>
+          <li>Avant le tour 20 (configurable)</li>
+        </ul>
+      </div>
+      <div class="win-card blue">
+        <div class="win-title">Blue Team gagne si…</div>
+        <ul class="win-list">
+          <li>3 tours consécutifs de détection complète</li>
+          <li>Tous les hôtes foothold/owned isolés</li>
+          <li>Red Team bloquée avant d'atteindre le DC</li>
+          <li>Score de détection &gt; seuil configuré</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       TECH STACK
+  ═══════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-title">Stack technique</div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      <table class="tech-table">
+        <thead>
+          <tr>
+            <th>Couche</th>
+            <th>Technologie</th>
+            <th>Rôle</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="3" style="padding:0"><div class="tech-section-head">Backend</div></td></tr>
+          <tr><td>API</td><td>FastAPI + uvicorn</td><td>Routes REST, SSE streaming, CORS</td></tr>
+          <tr><td>Orchestration</td><td>asyncio + asyncio.Queue</td><td>Tour par tour, EventBus SSE</td></tr>
+          <tr><td>LLM Gemini</td><td>google-generativeai</td><td>Stack "propriétaire" — JSON structuré</td></tr>
+          <tr><td>LLM Groq</td><td>groq SDK</td><td>Stack "open source" — ultra-rapide</td></tr>
+          <tr><td>Config</td><td>pydantic + python-dotenv</td><td>Validation, env vars sécurisées</td></tr>
+
+          <tr><td colspan="3" style="padding:0"><div class="tech-section-head">Frontend</div></td></tr>
+          <tr><td>Framework</td><td>React 18 + Vite</td><td>UI réactive, HMR dev, build optimisé</td></tr>
+          <tr><td>Styles</td><td>Tailwind CSS</td><td>Thème dark cyberpunk, responsive</td></tr>
+          <tr><td>Visualisation</td><td>D3.js v7</td><td>Force graph réseau animé, transitions</td></tr>
+          <tr><td>State</td><td>useReducer + Context</td><td>État global simulation, events SSE</td></tr>
+          <tr><td>Icons</td><td>Lucide React</td><td>Icônes shields, skulls, alerts…</td></tr>
+
+          <tr><td colspan="3" style="padding:0"><div class="tech-section-head">Déploiement</div></td></tr>
+          <tr><td>Frontend</td><td>Vercel</td><td>Build Vite, CDN global, HTTPS auto</td></tr>
+          <tr><td>Backend</td><td>Render.com</td><td>Web service Python, free tier 750h/mois</td></tr>
+          <tr><td>Dev local</td><td>Docker Compose</td><td>Stack complète en une commande</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       STRUCTURE DES FICHIERS
+  ═══════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-title">Structure du projet</div>
+    <div class="file-tree">
+<span class="dir">cyber-agents-demo/</span>
+├── <span class="dir">backend/</span>
+│   ├── <span class="hl">main.py</span>                    <span class="comm"># FastAPI app, CORS, lifespan</span>
+│   ├── <span class="dir">llm/</span>
+│   │   ├── <span class="hl">gemini_client.py</span>         <span class="comm"># Google Generative AI wrapper</span>
+│   │   └── <span class="hl">groq_client.py</span>           <span class="comm"># Groq SDK wrapper</span>
+│   ├── <span class="dir">agents/</span>
+│   │   ├── <span class="hl">base_agent.py</span>            <span class="comm"># Classe abstraite, retry, JSON parsing</span>
+│   │   ├── <span class="dir">red_team/</span>
+│   │   │   ├── recon_agent.py         <span class="comm"># T1590, T1589</span>
+│   │   │   ├── scanner_agent.py       <span class="comm"># T1046, T1595</span>
+│   │   │   ├── exploit_agent.py       <span class="comm"># T1190, T1203</span>
+│   │   │   ├── pivot_agent.py         <span class="comm"># T1021, T1563</span>
+│   │   │   └── exfil_agent.py         <span class="comm"># T1041, T1048</span>
+│   │   └── <span class="dir">blue_team/</span>
+│   │       ├── monitor_agent.py       <span class="comm"># DE.CM-1, anomaly detection</span>
+│   │       ├── analyzer_agent.py      <span class="comm"># Threat correlation</span>
+│   │       ├── firewall_agent.py      <span class="comm"># Dynamic rule generation</span>
+│   │       ├── responder_agent.py     <span class="comm"># Host isolation, patching</span>
+│   │       └── threat_intel_agent.py  <span class="comm"># IOC enrichment</span>
+│   ├── <span class="dir">simulation/</span>
+│   │   ├── <span class="hl">network_state.py</span>         <span class="comm"># 5 hôtes, compromise_status, alerts</span>
+│   │   ├── <span class="hl">game_engine.py</span>           <span class="comm"># Orchestration tour par tour</span>
+│   │   └── scenarios.py             <span class="comm"># Topologies prédéfinies</span>
+│   └── <span class="dir">api/</span>
+│       ├── <span class="hl">routes.py</span>                <span class="comm"># /start /stream /config /reset</span>
+│       └── <span class="hl">sse.py</span>                   <span class="comm"># EventBus, format_sse()</span>
+│
+├── <span class="dir">frontend/src/</span>
+│   ├── <span class="hl">App.tsx</span>                    <span class="comm"># Layout grid principal</span>
+│   ├── <span class="dir">components/</span>
+│   │   ├── <span class="hl">ControlPanel.tsx</span>         <span class="comm"># Stack selector, sliders, Start/Pause</span>
+│   │   ├── <span class="hl">NetworkMap.tsx</span>           <span class="comm"># D3 force-directed graph animé</span>
+│   │   ├── <span class="hl">AttackTimeline.tsx</span>       <span class="comm"># Feed Red team + tags MITRE</span>
+│   │   ├── <span class="hl">DefenseLog.tsx</span>           <span class="comm"># Feed Blue team + severity</span>
+│   │   ├── <span class="hl">AgentThoughts.tsx</span>        <span class="comm"># LLM reasoning expandable</span>
+│   │   └── <span class="hl">ScoreBoard.tsx</span>           <span class="comm"># Scores live + win progress</span>
+│   ├── <span class="dir">hooks/</span>
+│   │   ├── useSSE.ts                <span class="comm"># EventSource + reconnect</span>
+│   │   └── useSimulation.ts         <span class="comm"># État global + dispatch</span>
+│   └── types/simulation.ts          <span class="comm"># Interfaces TypeScript</span>
+│
+├── docker-compose.yml               <span class="comm"># Dev local one-command</span>
+├── render.yaml                      <span class="comm"># Deploy Render backend</span>
+└── <span class="file">README.md</span>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       DÉPLOIEMENT
+  ═══════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-title">Guide de déploiement</div>
+    <div class="deploy-grid">
+
+      <div class="deploy-card">
+        <div class="deploy-title">Dev local</div>
+        <div class="deploy-sub">docker-compose · 2 minutes</div>
+        <div class="deploy-step">
+          <div class="step-num">1</div>
+          <div class="step-text">Copier <code>.env.example</code> → <code>.env</code>, renseigner <code>GEMINI_API_KEY</code> et <code>GROQ_API_KEY</code></div>
+        </div>
+        <div class="deploy-step">
+          <div class="step-num">2</div>
+          <div class="step-text"><code>docker-compose up --build</code></div>
+        </div>
+        <div class="deploy-step">
+          <div class="step-num">3</div>
+          <div class="step-text">Ouvrir <code>http://localhost:5173</code></div>
+        </div>
+        <div style="margin-top:12px;padding:10px;background:rgba(34,197,94,.06);border-radius:6px;border:1px solid #14532d">
+          <div style="font-size:.78rem;color:#22c55e;font-family:monospace">Clés API gratuites :</div>
+          <div style="font-size:.75rem;color:#475569;margin-top:4px">Gemini → aistudio.google.com/apikey</div>
+          <div style="font-size:.75rem;color:#475569">Groq → console.groq.com/keys</div>
+        </div>
+      </div>
+
+      <div class="deploy-card">
+        <div class="deploy-title">Production</div>
+        <div class="deploy-sub">Vercel + Render · gratuit</div>
+        <div class="deploy-step">
+          <div class="step-num">1</div>
+          <div class="step-text">Push sur GitHub</div>
+        </div>
+        <div class="deploy-step">
+          <div class="step-num">2</div>
+          <div class="step-text">Render : "New Web Service" → <code>backend/</code>, ajouter les env vars API keys</div>
+        </div>
+        <div class="deploy-step">
+          <div class="step-num">3</div>
+          <div class="step-text">Vercel : importer le repo, root <code>frontend/</code>, ajouter <code>VITE_API_URL</code> = URL Render</div>
+        </div>
+        <div class="deploy-step">
+          <div class="step-num">4</div>
+          <div class="step-text">Mettre à jour <code>ALLOWED_ORIGINS</code> backend avec l'URL Vercel</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- footer -->
+  <footer style="margin-top:80px;padding-top:24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+    <span style="font-family:monospace;font-size:.75rem;color:var(--text-3)">Cyber Agents Demo · Hackathon 2026</span>
+    <span style="font-family:monospace;font-size:.75rem;color:var(--text-3)">FastAPI · React · Gemini · Groq · MITRE ATT&amp;CK</span>
+  </footer>
+
+</div><!-- /page -->
+</body>
+</html>
